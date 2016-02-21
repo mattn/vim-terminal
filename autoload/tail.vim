@@ -19,12 +19,10 @@ function! s:append_buf(expr, text)
     setlocal modifiable | call append('$', a:text) | setlocal nomodifiable
   endif
   exec oldnr.'wincmd w'
-  if mode =~ '[sSvV]'
+  if mode =~# '[sSvV]'
     silent! normal gv
   endif
-  if mode !~ '[cC]'
-    call feedkeys("\<c-l>", 't')
-  endif
+  redraw
 endfunction
 
 function! s:initialize() abort
@@ -45,6 +43,7 @@ function! s:initialize() abort
     autocmd BufWipeout <buffer> call s:terminate()
   augroup END
   wincmd p
+  set lazyredraw
 endfunction
 
 function! s:terminate() abort
