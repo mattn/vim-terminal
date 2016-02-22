@@ -70,8 +70,8 @@ function! tail#callback(id, msg)
   endfor
 endfunction
 
-function! tail#exitcb(id, msg)
-  call s:append_buf('__TAIL__', 'EXITED')
+function! tail#exitcb(job, code)
+  call s:append_buf('__TAIL__', 'EXITED ' . string(a:job) . " " . string(a:code))
 endfunction
 
 function! tail#file(arg) abort
