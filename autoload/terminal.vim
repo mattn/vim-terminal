@@ -49,7 +49,8 @@ function! s:append_part(expr, text) abort
   let text = a:text
   if a:text =~ "\<c-l>.*$"
     let text = substitute(text, ".*\<c-l>", '', 'g')
-    silent! %d _
+    %d _
+    redraw
   endif
   call setline('.', split(getline('.') . text, '\r\?\n', 1))
 
@@ -94,13 +95,13 @@ function! s:initialize_tail(job, handle) abort
 endfunction
 
 function! s:sendkey(c) abort
-  call ch_sendraw(b:handle, a:c, {'callback': 'terminal#partcb'})
+  call ch_sendraw(b:handle, a:c, {'callback': 'terminal#partcb_out'})
   return ''
 endfunction
 
 function! s:sendcr() abort
   call setline('.', b:line)
-  call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb'})
+  call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb_out'})
   return ''
 endfunction
 
@@ -130,6 +131,8 @@ function! s:initialize_terminal(job, handle) abort
   let b:line = ''
   inoremap <buffer> <silent> <c-c> <C-R>=<SID>sendcc()<cr>
   inoremap <buffer> <silent> <cr> <C-R>=<SID>sendcr()<cr>
+  inoremap <buffer> <silent> <tab> <C-R>=<SID>sendkey("\t")<cr>
+  inoremap <buffer> <silent> <bs> <C-R>=<SID>sendkey("\<bs>")<cr>
   startinsert!
   set lazyredraw
 endfunction
@@ -154,13 +157,24 @@ function! terminal#linecb(id, msg)
   endfor
 endfunction
 
-function! terminal#partcb(id, msg)
+function! terminal#partcb_out(id, msg)
   let msg = substitute(a:msg, "\r", "", "g")
   call s:append_part('__TERMINAL__', msg)
 endfunction
 
+function! terminal#partcb_err(id, msg)
+  let line = b:line
+  call setline('.', '')
+  let msg = substitute(a:msg, "\r", "", "g")
+  call s:append_part('__TERMINAL__', msg)
+  call s:append_part('__TERMINAL__', line)
+endfunction
+
 function! terminal#exitcb(job, code)
   call s:append_line('__TERMINAL__', string(a:job) . " with exit code " . string(a:code))
+  augroup Terminal
+    au!
+  augroup END
 endfunction
 
 function! terminal#quickfix(id, msg)
@@ -181,7 +195,7 @@ function! terminal#tail_cmd(arg) abort
   let job = job_start(a:arg)
   call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'err-cb': 'terminal#linecb', 'mode': 'raw'})
   call s:initialize_tail(job, handle)
 endfunction
 
@@ -189,7 +203,7 @@ function! terminal#quickfix_cmd(arg) abort
   let job = job_start(a:arg)
   call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'err-cb': 'terminal#linecb', 'mode': 'raw'})
   copen
   wincmd p
 endfunction
@@ -198,7 +212,7 @@ function! terminal#cmd(arg) abort
   let job = job_start(a:arg)
   call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#partcb', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out-cb': 'terminal#partcb_out', 'err-cb': 'terminal#partcb_err', 'mode': 'raw'})
   call s:initialize_terminal(job, handle)
 endfunction
 
