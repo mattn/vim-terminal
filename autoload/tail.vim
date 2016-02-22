@@ -18,6 +18,10 @@ function! s:append_buf(expr, text)
   else
     setlocal modifiable | call append('$', a:text) | setlocal nomodifiable
   endif
+  let pos = getpos('.')
+  let pos[1] = line('$')
+  call setpos('.', pos)
+
   exec oldnr.'wincmd w'
   if mode =~# '[sSvV]'
     silent! normal gv
@@ -62,14 +66,19 @@ endfunction
 
 function! tail#callback(id, msg)
   for line in split(a:msg, '\r\?\n')
-    silent! call s:append_buf('__TAIL__', line)
+    call s:append_buf('__TAIL__', line)
   endfor
+endfunction
+
+function! tail#exitcb(id, msg)
+  call s:append_buf('__TAIL__', 'EXITED')
 endfunction
 
 function! tail#file(arg) abort
   call s:terminate()
   call s:initialize()
   let s:job = job_start('tail -f ' . shellescape(a:arg))
+  call job_setoptions(s:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
   let s:handle = job_getchannel(s:job)
   call ch_setoptions(s:handle, {'callback': 'tail#callback'})
 endfunction
