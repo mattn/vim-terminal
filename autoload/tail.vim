@@ -37,10 +37,10 @@ function! s:initialize() abort
     if wn != winnr()
       exe wn 'wincmd w'
     endif
-    silent! %d _
   else
     silent exec 'rightbelow vnew __TAIL__'
   endif
+  silent! %d _
   setlocal buftype=nofile bufhidden=wipe noswapfile
   setlocal nomodified
   setlocal nomodifiable
@@ -73,7 +73,7 @@ function! tail#callback(id, msg)
 endfunction
 
 function! tail#exitcb(job, code)
-  call s:append_buf('__TAIL__', 'EXITED ' . string(a:job) . " " . string(a:code))
+  call s:append_buf('__TAIL__', string(a:job) . " with exit code " . string(a:code))
 endfunction
 
 function! tail#file(arg) abort
