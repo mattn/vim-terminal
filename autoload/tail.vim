@@ -87,6 +87,7 @@ function! tail#cmd(arg) abort
   call s:terminate()
   call s:initialize()
   let s:job = job_start(a:arg)
+  call job_setoptions(s:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
   let s:handle = job_getchannel(s:job)
   call ch_setoptions(s:handle, {'callback': 'tail#callback'})
 endfunction

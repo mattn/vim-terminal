@@ -2,7 +2,8 @@ if index(map([
 \ 'job_start',
 \ 'job_getchannel',
 \ 'job_stop',
-\ 'ch_setoptions'
+\ 'job_setoptions',
+\ 'ch_setoptions',
 \], 'exists("*".v:val)'),0) != -1
   finish
 endif
