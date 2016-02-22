@@ -82,30 +82,31 @@ endfunction
 
 function! tail#quickfix(id, msg)
   for line in split(a:msg, '\r\?\n')
-    caddexpr line
+    silent! caddexpr line
   endfor
 endfunction
 
 function! tail#file(arg) abort
-  let b:job = job_start('tail -f ' . shellescape(a:arg))
-  call job_setoptions(b:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
-  let b:handle = job_getchannel(b:job)
-  call ch_setoptions(b:handle, {'out-cb': 'tail#callback'})
-  call s:initialize(b:job, b:handle)
+  let job = job_start('tail -f ' . shellescape(a:arg))
+  call job_setoptions(job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
+  let handle = job_getchannel(job)
+  call ch_setoptions(handle, {'out-cb': 'tail#callback'})
+  call s:initialize(job, handle)
 endfunction
 
 function! tail#cmd(arg) abort
-  let b:job = job_start(a:arg)
-  call job_setoptions(b:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
-  let b:handle = job_getchannel(b:job)
-  call ch_setoptions(b:handle, {'out-cb': 'tail#callback'})
-  call s:initialize(b:job, b:handle)
+  let job = job_start(a:arg)
+  call job_setoptions(job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
+  let handle = job_getchannel(job)
+  call ch_setoptions(handle, {'out-cb': 'tail#callback'})
+  call s:initialize(job, handle)
 endfunction
 
-function! tail#quickfix(arg) abort
-  let b:job = job_start(a:arg)
-  call job_setoptions(b:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
-  let b:handle = job_getchannel(b:job)
-  call ch_setoptions(b:handle, {'out-cb': 'tail#quickfix'})
-  call s:initialize(b:job, b:handle)
+function! tail#quickfixcmd(arg) abort
+  let job = job_start(a:arg)
+  call job_setoptions(job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
+  let handle = job_getchannel(job)
+  call ch_setoptions(handle, {'out-cb': 'tail#quickfix'})
+  copen
+  wincmd p
 endfunction
