@@ -33,19 +33,15 @@ function! s:append_line(expr, text) abort
 endfunction
 
 function! s:append_part(expr, text) abort
-  if bufnr(a:expr) == -1
+  let mode = mode()
+  let wn = bufwinnr('__TERMINAL__')
+  if wn == -1
     return
   endif
-  let mode = mode()
-  let oldnr = winnr()
-  let winnr = bufwinnr(a:expr)
-  if winnr == -1
-    return
+  if wn != winnr()
+    exe wn 'wincmd w'
   endif
 
-  if oldnr != winnr
-    exec winnr.'wincmd w'
-  endif
   let text = a:text
   if a:text =~ "\<c-l>.*$"
     let text = substitute(text, ".*\<c-l>", '', 'g')
@@ -60,9 +56,11 @@ function! s:append_part(expr, text) abort
   call setpos('.', pos)
   let b:line = getline('.')
 
-  exec oldnr.'wincmd w'
-  if mode =~# '[sSvV]'
-    silent! normal gv
+  if wn != winnr()
+    wincmd p
+    if mode =~# '[sSvV]'
+      silent! normal gv
+    endif
   endif
   if mode !~# '[cC]'
     redraw
@@ -94,22 +92,6 @@ function! s:initialize_tail(job, handle) abort
   set lazyredraw
 endfunction
 
-function! s:sendkey(c) abort
-  call ch_sendraw(b:handle, a:c, {'callback': 'terminal#partcb_out'})
-  return ''
-endfunction
-
-function! s:sendcr() abort
-  call setline('.', b:line)
-  call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb_out'})
-  return ''
-endfunction
-
-function! s:sendcc() abort
-  call job_stop(b:job)
-  return ''
-endfunction
-
 function! s:initialize_terminal(job, handle) abort
   let wn = bufwinnr('__TERMINAL__')
   if wn != -1
@@ -138,6 +120,13 @@ function! s:initialize_terminal(job, handle) abort
 endfunction
 
 function! s:terminate() abort
+  let wn = bufwinnr('__TERMINAL__')
+  if wn == -1
+    return
+  endif
+  if wn != winnr()
+    exe wn 'wincmd w'
+  endif
   if exists('b:handle')
     silent! call ch_close(b:handle)
     unlet b:handle
@@ -149,6 +138,23 @@ function! s:terminate() abort
   augroup Terminal
     au!
   augroup END
+  wincmd p
+endfunction
+
+function! s:sendkey(c) abort
+  call ch_sendraw(b:handle, a:c, {'callback': 'terminal#partcb_out'})
+  return ''
+endfunction
+
+function! s:sendcr() abort
+  call setline('.', b:line)
+  call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb_out'})
+  return ''
+endfunction
+
+function! s:sendcc() abort
+  call job_stop(b:job)
+  return ''
 endfunction
 
 function! terminal#linecb(id, msg)
