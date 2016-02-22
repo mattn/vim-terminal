@@ -109,7 +109,7 @@ function! s:sendcc()
   return ''
 endfunction
 
-function! s:initialize_term(job, handle) abort
+function! s:initialize_terminal(job, handle) abort
   let wn = bufwinnr('__TERMINAL__')
   if wn != -1
     if wn != winnr()
@@ -174,7 +174,7 @@ function! terminal#tail_file(arg) abort
   call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
   call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'mode': 'raw'})
-  call s:initialize_terminal(job, handle)
+  call s:initialize_tail(job, handle)
 endfunction
 
 function! terminal#tail_cmd(arg) abort
@@ -182,7 +182,7 @@ function! terminal#tail_cmd(arg) abort
   call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
   call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'mode': 'raw'})
-  call s:initialize_terminal(job, handle)
+  call s:initialize_tail(job, handle)
 endfunction
 
 function! terminal#quickfix_cmd(arg) abort
@@ -199,6 +199,6 @@ function! terminal#cmd(arg) abort
   call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
   call ch_setoptions(handle, {'out-cb': 'terminal#partcb', 'mode': 'raw'})
-  call s:initialize_term(job, handle)
+  call s:initialize_terminal(job, handle)
 endfunction
 
