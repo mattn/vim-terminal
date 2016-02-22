@@ -49,7 +49,6 @@ function! s:append_part(expr, text)
   let text = a:text
   if a:text =~ "\<c-l>.*$"
     let text = substitute(text, ".*\<c-l>", '', 'g')
-	let g:hoge = text
     silent! %d _
   endif
   call setline('.', split(getline('.') . text, '\r\?\n', 1))
@@ -124,7 +123,7 @@ function! s:initialize_term(job, handle) abort
   augroup Terminal
     au!
     autocmd BufWipeout <buffer> call s:terminate()
-	autocmd InsertCharPre <buffer> call s:sendkey(v:char)
+    autocmd InsertCharPre <buffer> call s:sendkey(v:char)
   augroup END
   let b:job = a:job
   let b:handle = a:handle
