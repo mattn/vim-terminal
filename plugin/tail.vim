@@ -11,3 +11,4 @@ if executable('tail')
   command! -nargs=1 -complete=file TailFile call tail#file(<f-args>)
 endif
 command! -nargs=1 -complete=file TailCmd call tail#cmd(<q-args>)
+command! -nargs=1 -complete=file QuickFixCmd call tail#quickfix(<q-args>)

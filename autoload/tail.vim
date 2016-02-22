@@ -20,6 +20,7 @@ function! s:append_buf(expr, text)
   endif
   let pos = getpos('.')
   let pos[1] = line('$')
+  let pos[2] = 1
   call setpos('.', pos)
 
   exec oldnr.'wincmd w'
@@ -31,14 +32,14 @@ function! s:append_buf(expr, text)
   endif
 endfunction
 
-function! s:initialize() abort
+function! s:initialize(job, handle) abort
   let wn = bufwinnr('__TAIL__')
   if wn != -1
     if wn != winnr()
       exe wn 'wincmd w'
     endif
   else
-    silent exec 'rightbelow vnew __TAIL__'
+    silent exec 'rightbelow new __TAIL__'
   endif
   silent! %d _
   setlocal buftype=nofile bufhidden=wipe noswapfile
@@ -48,18 +49,21 @@ function! s:initialize() abort
     au!
     autocmd BufWipeout <buffer> call s:terminate()
   augroup END
+  let b:job = a:job
+  let b:handle = a:handle
+  nnoremap <c-c> :<c-u>call job_stop(b:job)<cr>
   wincmd p
   set lazyredraw
 endfunction
 
 function! s:terminate() abort
-  if exists('s:handle')
-    silent! call ch_close(s:handle)
-    unlet s:handle
+  if exists('b:handle')
+    silent! call ch_close(b:handle)
+    unlet b:handle
   endif
-  if exists('s:job')
-    silent! call job_stop(s:job, 'kill')
-    unlet s:job
+  if exists('b:job')
+    silent! call job_stop(b:job, 'kill')
+    unlet b:job
   endif
   augroup Tail
     au!
@@ -76,20 +80,32 @@ function! tail#exitcb(job, code)
   call s:append_buf('__TAIL__', string(a:job) . " with exit code " . string(a:code))
 endfunction
 
+function! tail#quickfix(id, msg)
+  for line in split(a:msg, '\r\?\n')
+    caddexpr line
+  endfor
+endfunction
+
 function! tail#file(arg) abort
-  call s:terminate()
-  call s:initialize()
-  let s:job = job_start('tail -f ' . shellescape(a:arg))
-  call job_setoptions(s:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
-  let s:handle = job_getchannel(s:job)
-  call ch_setoptions(s:handle, {'out-cb': 'tail#callback'})
+  let b:job = job_start('tail -f ' . shellescape(a:arg))
+  call job_setoptions(b:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
+  let b:handle = job_getchannel(b:job)
+  call ch_setoptions(b:handle, {'out-cb': 'tail#callback'})
+  call s:initialize(b:job, b:handle)
 endfunction
 
 function! tail#cmd(arg) abort
-  call s:terminate()
-  call s:initialize()
-  let s:job = job_start(a:arg)
-  call job_setoptions(s:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
-  let s:handle = job_getchannel(s:job)
-  call ch_setoptions(s:handle, {'out-cb': 'tail#callback'})
+  let b:job = job_start(a:arg)
+  call job_setoptions(b:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
+  let b:handle = job_getchannel(b:job)
+  call ch_setoptions(b:handle, {'out-cb': 'tail#callback'})
+  call s:initialize(b:job, b:handle)
+endfunction
+
+function! tail#quickfix(arg) abort
+  let b:job = job_start(a:arg)
+  call job_setoptions(b:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
+  let b:handle = job_getchannel(b:job)
+  call ch_setoptions(b:handle, {'out-cb': 'tail#quickfix'})
+  call s:initialize(b:job, b:handle)
 endfunction
