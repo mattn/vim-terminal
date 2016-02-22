@@ -80,7 +80,7 @@ function! tail#file(arg) abort
   let s:job = job_start('tail -f ' . shellescape(a:arg))
   call job_setoptions(s:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
   let s:handle = job_getchannel(s:job)
-  call ch_setoptions(s:handle, {'callback': 'tail#callback'})
+  call ch_setoptions(s:handle, {'out-cb': 'tail#callback'})
 endfunction
 
 function! tail#cmd(arg) abort
@@ -89,5 +89,5 @@ function! tail#cmd(arg) abort
   let s:job = job_start(a:arg)
   call job_setoptions(s:job, {'exit-cb': 'tail#exitcb', 'stoponexit': 'kill'})
   let s:handle = job_getchannel(s:job)
-  call ch_setoptions(s:handle, {'callback': 'tail#callback'})
+  call ch_setoptions(s:handle, {'out-cb': 'tail#callback'})
 endfunction
