@@ -1,4 +1,4 @@
-function! s:append_line(expr, text)
+function! s:append_line(expr, text) abort
   if bufnr(a:expr) == -1
     return
   endif
@@ -32,7 +32,7 @@ function! s:append_line(expr, text)
   endif
 endfunction
 
-function! s:append_part(expr, text)
+function! s:append_part(expr, text) abort
   if bufnr(a:expr) == -1
     return
   endif
@@ -93,18 +93,18 @@ function! s:initialize_tail(job, handle) abort
   set lazyredraw
 endfunction
 
-function! s:sendkey(c)
+function! s:sendkey(c) abort
   call ch_sendraw(b:handle, a:c, {'callback': 'terminal#partcb'})
   return ''
 endfunction
 
-function! s:sendcr()
+function! s:sendcr() abort
   call setline('.', b:line)
   call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb'})
   return ''
 endfunction
 
-function! s:sendcc()
+function! s:sendcc() abort
   call job_stop(b:job)
   return ''
 endfunction
