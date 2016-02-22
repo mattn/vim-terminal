@@ -26,7 +26,9 @@ function! s:append_buf(expr, text)
   if mode =~# '[sSvV]'
     silent! normal gv
   endif
-  redraw
+  if mode !~# '[cC]'
+    redraw
+  endif
 endfunction
 
 function! s:initialize() abort
