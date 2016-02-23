@@ -55,6 +55,7 @@ function! s:append_part(expr, text) abort
   let pos[1] = line('$')
   let pos[2] += len(a:text)
   call setpos('.', pos)
+  let b:line = getline('.')
   if oldnr != winnr
     if winnr == -1
       silent hide
@@ -113,6 +114,7 @@ function! s:initialize_terminal(job, handle) abort
   augroup END
   let b:job = a:job
   let b:handle = a:handle
+  let b:line = ''
   inoremap <buffer> <silent> <c-c> <C-R>=<SID>sendcc()<cr>
   inoremap <buffer> <silent> <cr> <C-R>=<SID>sendcr()<cr>
   inoremap <buffer> <silent> <tab> <C-R>=<SID>sendkey("\t")<cr>
@@ -157,6 +159,10 @@ function! s:sendkey(c) abort
 endfunction
 
 function! s:sendcr() abort
+  if has('win32')
+    call setline('.', b:line)
+    let b:line = ''
+  endif
   silent! call ch_sendraw(b:handle, "\n", {'callback': ''})
   return ''
 endfunction

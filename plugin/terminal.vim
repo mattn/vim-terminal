@@ -12,4 +12,4 @@ if executable('tail')
 endif
 command! -nargs=1 -complete=file TailCmd call terminal#tail_cmd(<q-args>)
 command! -nargs=1 -complete=file QuickFixCmd call terminal#quickfix_cmd(<q-args>)
-command! -nargs=1 -complete=file Terminal call terminal#cmd(<q-args>)
+command! -nargs=1 -complete=file Terminal call terminal#term(<q-args>)
