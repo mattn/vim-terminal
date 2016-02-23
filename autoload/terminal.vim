@@ -52,7 +52,7 @@ function! s:append_part(expr, text) abort
 
   let pos = getpos('.')
   let pos[1] = line('$')
-  let pos[2] = 9999
+  let pos[2] += len(a:text)
   call setpos('.', pos)
   let b:line = getline('.')
 
@@ -87,7 +87,7 @@ function! s:initialize_tail(job, handle) abort
   let b:job = a:job
   let b:handle = a:handle
   nnoremap <buffer> <c-c> :<c-u>call job_stop(b:job)<cr>
-  nnoremap <buffer> i :<c-u>call ch_sendraw(b:handle, input('INPUT: ') . "\n")<cr>
+  nnoremap <buffer> i :<c-u>call <SID>sendinput()<cr>
   wincmd p
   set lazyredraw
 endfunction
@@ -114,7 +114,7 @@ function! s:initialize_terminal(job, handle) abort
   inoremap <buffer> <silent> <c-c> <C-R>=<SID>sendcc()<cr>
   inoremap <buffer> <silent> <cr> <C-R>=<SID>sendcr()<cr>
   inoremap <buffer> <silent> <tab> <C-R>=<SID>sendkey("\t")<cr>
-  inoremap <buffer> <silent> <bs> <C-R>=<SID>sendkey("\<bs>")<cr>
+  inoremap <buffer> <silent> <bs> <C-R>=<SID>sendkey("\08")<cr>
   startinsert!
   set lazyredraw
 endfunction
@@ -141,14 +141,22 @@ function! s:terminate() abort
   wincmd p
 endfunction
 
+function! s:sendinput(c) abort
+  let line = input('INPUT: ')
+  silent! call ch_sendraw(b:handle, line . "\n")
+endfunction
+
 function! s:sendkey(c) abort
-  call ch_sendraw(b:handle, a:c, {'callback': 'terminal#partcb_out'})
+  silent! call ch_sendraw(b:handle, a:c, {'callback': ''})
+  if !has('win32')
+    let v:char = ''
+  endif
   return ''
 endfunction
 
 function! s:sendcr() abort
   call setline('.', b:line)
-  call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb_out'})
+  silent! call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb_out'})
   return ''
 endfunction
 
@@ -165,6 +173,7 @@ endfunction
 
 function! terminal#partcb_out(id, msg)
   let msg = substitute(a:msg, "\r", "", "g")
+  let msg = substitute(msg, "\x1b\[[0-9;]*[a-zA-Z]", "", "g")
   call s:append_part('__TERMINAL__', msg)
 endfunction
 
@@ -172,6 +181,7 @@ function! terminal#partcb_err(id, msg)
   let line = b:line
   call setline('.', '')
   let msg = substitute(a:msg, "\r", "", "g")
+  let msg = substitute(msg, "\x1b\[[0-9;]*m", "", "g")
   call s:append_part('__TERMINAL__', msg)
   call s:append_part('__TERMINAL__', line)
 endfunction
@@ -214,11 +224,14 @@ function! terminal#quickfix_cmd(arg) abort
   wincmd p
 endfunction
 
-function! terminal#cmd(arg) abort
-  let job = job_start(a:arg)
+function! terminal#term(arg) abort
+  let cmd = a:arg
+  if empty(cmd)
+    let cmd = has('win32') ? 'cmd' : 'bash --login -i'
+  endif
+  let job = job_start(cmd)
   call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#partcb_out', 'err-cb': 'terminal#partcb_err', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out-cb': 'terminal#partcb_out', 'err-cb': 'terminal#partcb_out', 'mode': 'raw'})
   call s:initialize_terminal(job, handle)
 endfunction
-
