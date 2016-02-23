@@ -5,23 +5,23 @@ function! s:append_line(expr, text) abort
   let mode = mode()
   let oldnr = winnr()
   let winnr = bufwinnr(a:expr)
-
   if oldnr != winnr
     if winnr == -1
       silent exec "sp ".escape(bufname(bufnr(a:expr)), ' \')
-      setlocal modifiable | call append('$', a:text) | setlocal nomodifiable
-      silent hide
     else
       exec winnr.'wincmd w'
-      setlocal modifiable | call append('$', a:text) | setlocal nomodifiable
     endif
-  else
-    setlocal modifiable | call append('$', a:text) | setlocal nomodifiable
   endif
+  setlocal modifiable | call append('$', a:text) | setlocal nomodifiable
   let pos = getpos('.')
   let pos[1] = line('$')
   let pos[2] = 9999
   call setpos('.', pos)
+  if oldnr != winnr
+    if winnr == -1
+      silent hide
+    endif
+  endif
 
   exec oldnr.'wincmd w'
   if mode =~# '[sSvV]'
@@ -34,33 +34,36 @@ endfunction
 
 function! s:append_part(expr, text) abort
   let mode = mode()
-  let wn = bufwinnr('__TERMINAL__')
-  if wn == -1
-    return
+  let oldnr = winnr()
+  let winnr = bufwinnr('__TERMINAL__')
+  if oldnr != winnr
+    if winnr == -1
+      silent exec "sp ".escape(bufname(bufnr(a:expr)), ' \')
+    else
+      exec winnr.'wincmd w'
+    endif
   endif
-  if wn != winnr()
-    exe wn 'wincmd w'
-  endif
-
   let text = a:text
   if a:text =~ "\<c-l>.*$"
     let text = substitute(text, ".*\<c-l>", '', 'g')
     %d _
     redraw
   endif
+  let text = substitute(text, "\x1b\[[0-9;]*[a-zA-Z]", "", "g")
   call setline('.', split(getline('.') . text, '\r\?\n', 1))
-
   let pos = getpos('.')
   let pos[1] = line('$')
   let pos[2] += len(a:text)
   call setpos('.', pos)
-  let b:line = getline('.')
-
-  if wn != winnr()
-    wincmd p
-    if mode =~# '[sSvV]'
-      silent! normal gv
+  if oldnr != winnr
+    if winnr == -1
+      silent hide
     endif
+  endif
+
+  exec oldnr.'wincmd w'
+  if mode =~# '[sSvV]'
+    silent! normal gv
   endif
   if mode !~# '[cC]'
     redraw
@@ -110,7 +113,6 @@ function! s:initialize_terminal(job, handle) abort
   augroup END
   let b:job = a:job
   let b:handle = a:handle
-  let b:line = ''
   inoremap <buffer> <silent> <c-c> <C-R>=<SID>sendcc()<cr>
   inoremap <buffer> <silent> <cr> <C-R>=<SID>sendcr()<cr>
   inoremap <buffer> <silent> <tab> <C-R>=<SID>sendkey("\t")<cr>
@@ -155,8 +157,7 @@ function! s:sendkey(c) abort
 endfunction
 
 function! s:sendcr() abort
-  call setline('.', b:line)
-  silent! call ch_sendraw(b:handle, "\n", {'callback': 'terminal#partcb_out'})
+  silent! call ch_sendraw(b:handle, "\n", {'callback': ''})
   return ''
 endfunction
 
@@ -173,17 +174,7 @@ endfunction
 
 function! terminal#partcb_out(id, msg)
   let msg = substitute(a:msg, "\r", "", "g")
-  let msg = substitute(msg, "\x1b\[[0-9;]*[a-zA-Z]", "", "g")
   call s:append_part('__TERMINAL__', msg)
-endfunction
-
-function! terminal#partcb_err(id, msg)
-  let line = b:line
-  call setline('.', '')
-  let msg = substitute(a:msg, "\r", "", "g")
-  let msg = substitute(msg, "\x1b\[[0-9;]*m", "", "g")
-  call s:append_part('__TERMINAL__', msg)
-  call s:append_part('__TERMINAL__', line)
 endfunction
 
 function! terminal#exitcb(job, code)
