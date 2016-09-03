@@ -198,25 +198,25 @@ endfunction
 
 function! terminal#tail_file(arg) abort
   let job = job_start('tail -f ' . shellescape(a:arg))
-  call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
+  call job_setoptions(job, {'exit_cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out_cb': 'terminal#linecb', 'mode': 'raw'})
   call s:initialize_tail(job, handle)
 endfunction
 
 function! terminal#tail_cmd(arg) abort
   let job = job_start(a:arg)
-  call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
+  call job_setoptions(job, {'exit_cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'err-cb': 'terminal#linecb', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out_cb': 'terminal#linecb', 'err_cb': 'terminal#linecb', 'mode': 'raw'})
   call s:initialize_tail(job, handle)
 endfunction
 
 function! terminal#quickfix_cmd(arg) abort
   let job = job_start(a:arg)
-  call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
+  call job_setoptions(job, {'exit_cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#linecb', 'err-cb': 'terminal#linecb', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out_cb': 'terminal#linecb', 'err_cb': 'terminal#linecb', 'mode': 'raw'})
   copen
   wincmd p
 endfunction
@@ -227,8 +227,8 @@ function! terminal#term(arg) abort
     let cmd = has('win32') ? 'cmd' : 'bash --login -i'
   endif
   let job = job_start(cmd)
-  call job_setoptions(job, {'exit-cb': 'terminal#exitcb', 'stoponexit': 'kill'})
+  call job_setoptions(job, {'exit_cb': 'terminal#exitcb', 'stoponexit': 'kill'})
   let handle = job_getchannel(job)
-  call ch_setoptions(handle, {'out-cb': 'terminal#partcb_out', 'err-cb': 'terminal#partcb_out', 'mode': 'raw'})
+  call ch_setoptions(handle, {'out_cb': 'terminal#partcb_out', 'err_cb': 'terminal#partcb_out', 'mode': 'raw'})
   call s:initialize_terminal(job, handle)
 endfunction
