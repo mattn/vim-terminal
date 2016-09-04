@@ -160,7 +160,7 @@ endfunction
 
 function! s:sendcr() abort
   if has('win32')
-    call setline('.', b:line)
+    silent! call setline('.', b:line)
     let b:line = ''
   endif
   silent! call ch_sendraw(b:handle, "\n", {'callback': ''})
@@ -189,7 +189,6 @@ function! terminal#exitcb(job, code)
   call s:append_line('__TERMINAL__', string(a:job) . " with exit code " . string(a:code))
   augroup Terminal
     au!
-    mapclear <buffer>
   augroup END
 endfunction
 
