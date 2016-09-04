@@ -179,14 +179,17 @@ function! terminal#linecb(id, msg)
 endfunction
 
 function! terminal#partcb_out(id, msg)
-  let msg = substitute(a:msg, "\r", "", "g")
+  let msg = iconv(a:msg, 'char', &encoding)
+  let msg = substitute(msg, "\r", "", "g")
   call s:append_part('__TERMINAL__', msg)
+  call job_status(b:job)
 endfunction
 
 function! terminal#exitcb(job, code)
   call s:append_line('__TERMINAL__', string(a:job) . " with exit code " . string(a:code))
   augroup Terminal
     au!
+    mapclear <buffer>
   augroup END
 endfunction
 
