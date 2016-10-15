@@ -190,6 +190,7 @@ function! terminal#exitcb(job, code)
   augroup Terminal
     au!
   augroup END
+  call feedkeys("\<ESC>", "t")
 endfunction
 
 function! terminal#quickfix(id, msg)
