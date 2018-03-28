@@ -105,6 +105,7 @@ function! s:initialize_terminal(job, handle) abort
     endif
   else
     silent exec 'rightbelow new __TERMINAL__'
+    set filetype=__TERMINAL__
   endif
   silent! %d _
   setlocal buftype=nofile bufhidden=wipe noswapfile
